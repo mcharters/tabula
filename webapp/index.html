@@ -267,6 +267,15 @@
             </div>
               <hr>
 
+              <div id="documents-container">
+                <h4>Sedar Documents</h4>
+
+                <div id="document-list-container">
+                  <table class="table" id="document-table">
+                  </table>
+                </div>
+              </div>
+
               <div id="library-container">
                 <h4>Imported PDFs</h4>
 
@@ -295,6 +304,12 @@
         <nestedscript type="text/javascript" src="/js/vendor/upload-group.js"></nestedscript> 
         <nestedscript type="text/javascript" src="/js/vendor/jquery.tablesorter.min.js"></nestedscript>
         <nestedscript type="text/javascript" src="/js/vendor/spin.min.js"></nestedscript> 
+      </script>
+
+      <script type="text/template" id="document-template">
+        <td><%= company %></td>
+        <td><%= title %></td>
+        <td><%= date %></td>
       </script>
 
       <script type="text/template" id="uploaded-file-template">

@@ -59,10 +59,35 @@ Tabula.FileUpload = Backbone.Model.extend({
 // does flash work?
 // clear the input
 
+Tabula.Document = Backbone.Model.extend({
+  source: null,
+  title: null,
+  pages: null,
+  date: null,
+  company: null,
+  initialize: function() {
+    this.set('source', this.get('source') || null);
+    this.set('title', this.get('title') || null);
+    this.set('pages', this.get('pages') || null);
+    this.set('date', this.get('date') || null);
+    this.set('company', this.get('company').name || null);
+  }
+});
+
+Tabula.DocumentCollection = Backbone.Collection.extend({
+  model: Tabula.Document,
+  url: function() {
+    return '/documents';
+  },
+  parse: function(response) {
+    return response.documents;
+  }
+});
+
 Tabula.FileUploadsCollection = Backbone.Collection.extend({
   model: Tabula.FileUpload,
   comparator: function(i){ return -i.get('uploadTime') - i.get('uploadOrder')},
-})
+});
 
 Tabula.UploadedFile = Backbone.Model.extend({
   size: null,
@@ -121,7 +146,17 @@ Tabula.UploadedFileView = Backbone.View.extend({
             tr.fadeOut(200, function() { $(this).remove(); });
           });
     },
-})
+});
+
+Tabula.DocumentView = Backbone.View.extend({
+  tagName: 'tr',
+  className: 'uploaded-file',
+  template: _.template($('#document-template').html().replace(/nestedscript/g, 'script')),
+  render: function() {
+    this.$el.append(this.template(this.model.attributes));
+    return this;
+  }
+});
 
 Tabula.ProgressBars = Backbone.View.extend({
   template: _.template( $('#progress-bars-template').html().replace(/nestedscript/g, 'script')),
@@ -153,6 +188,13 @@ Tabula.Library = Backbone.View.extend({
       this.files_collection.fetch({silent: true, complete: _.bind(function(){ this.render(); this.renderFileLibrary(); }, this) });
       this.listenTo(this.files_collection, 'add', this.renderFileLibrary);
       this.uploads_collection = new Tabula.FileUploadsCollection([]);
+
+      this.documents_collection = new Tabula.DocumentCollection([]);
+      this.documents_collection.fetch({
+        complete: _.bind(function() {
+          this.renderDocuments();
+        }, this)
+      });
 
       this.listenTo(Tabula.notification, 'change', this.renderNotification);
       this.listenTo(Tabula.new_version, 'change', this.renderVersion);
@@ -236,6 +278,16 @@ Tabula.Library = Backbone.View.extend({
       });
       e.preventDefault();
       return false; // don't actually submit the form
+    },
+
+    renderDocuments: function() {
+      if (this.documents_collection.length > 0) {
+        $('#document-container').show();
+        this.documents_collection.each(_.bind(function(doc) {
+          var doc_element = new Tabula.DocumentView({model: doc}).render().$el;
+          $('#document-table').prepend(doc_element);
+        }));
+      }
     },
 
     renderFileLibrary: function(added_model){
