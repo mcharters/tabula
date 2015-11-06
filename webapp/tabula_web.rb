@@ -152,6 +152,17 @@ Cuba.define do
       run Rack::File.new(TabulaSettings::DOCUMENTS_BASEPATH)
     end
 
+    on 'documents' do
+      res['Content-Type'] = 'application/json'
+      documents = []
+      Dir.foreach(TabulaSettings::SEDAR_DOCUMENTS_BASEPATH) do |file|
+        next if file == "." or file == ".."
+        documents << File.read(File.join(TabulaSettings::SEDAR_DOCUMENTS_BASEPATH, file))
+      end
+
+      res.write('{"documents":[' + documents.join(',') + ']}')
+    end
+
     on 'version' do
       res.write JSON.dump({api: $TABULA_VERSION})
     end

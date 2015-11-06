@@ -77,6 +77,7 @@ module TabulaSettings
 
   ########## Constants that are used around the app, based on settings ##########
   DOCUMENTS_BASEPATH = File.join(self.getDataDir, 'pdfs')
+  SEDAR_DOCUMENTS_BASEPATH = File.join(self.getDataDir, 'json')
   ENABLE_DEBUG_METHODS = self.enableDebug
 
   puts "DATA_DIR = #{self.getDataDir}"
