@@ -13,6 +13,7 @@ class GenerateDocumentDataJob < Tabula::Background::Job
     original_filename = options[:original_filename]
     id = options[:id]
     output_dir = options[:output_dir]
+    interesting_pages = options[:interesting_pages]
 
 
     # return some status to browser
@@ -39,6 +40,11 @@ class GenerateDocumentDataJob < Tabula::Background::Job
     extractor = Tabula::Extraction::PagesInfoExtractor.new(filepath)
     File.open(output_dir + "/pages.json", 'w') do |f|
       page_data = extractor.pages.to_a
+
+      if interesting_pages.length > 0
+        page_data.keep_if { |page| interesting_pages.include? page[:number] }
+      end
+
       workspace[0]['page_count'] = page_data.size
       unless page_data.any? { |pd| pd[:hasText] }
         at(0, 100, "No text data found")

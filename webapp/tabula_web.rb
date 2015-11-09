@@ -52,19 +52,22 @@ Cuba.use Rack::Static, root: STATIC_ROOT, urls: ["/css","/js", "/img", "/swf", "
 Cuba.use Rack::ContentLength
 Cuba.use Rack::Reloader
 
-
-def upload(file)
-  original_filename = file[:filename]
-  file_id = Digest::SHA1.hexdigest(Time.now.to_s + original_filename) # just SHA1 of time isn't unique with multiple uploads
+def process(filename, filelocation, deleteFile, interestingPages)
+  file_id = Digest::SHA1.hexdigest(Time.now.to_s + filename) # just SHA1 of time isn't unique with multiple uploads
   file_path = File.join(TabulaSettings::DOCUMENTS_BASEPATH, file_id)
   FileUtils.mkdir(file_path)
-  begin
-    FileUtils.mv(file[:tempfile].path,
-                 File.join(file_path, 'document.pdf'))
-  rescue Errno::EACCES # move fails on windows sometimes
-    FileUtils.cp_r(file[:tempfile].path,
+
+  if deleteFile
+    begin
+      FileUtils.mv(filelocation,
                    File.join(file_path, 'document.pdf'))
-    FileUtils.rm_rf(file[:tempfile].path)
+    rescue Errno::EACCES # move fails on windows sometimes
+      FileUtils.cp_r(filelocation,
+                     File.join(file_path, 'document.pdf'))
+      FileUtils.rm_rf(filelocation)
+    end
+  else
+    FileUtils.cp_r(filelocation, File.join(file_path, 'document.pdf'))
   end
 
   filepath = File.join(file_path, 'document.pdf')
@@ -74,11 +77,12 @@ def upload(file)
   thumbnail_sizes =  [800]
 
   GenerateDocumentDataJob.create(:filepath => filepath,
-                                 :original_filename => original_filename,
+                                 :original_filename => filename,
                                  :id => file_id,
                                  :output_dir => file_path,
                                  :thumbnail_sizes => thumbnail_sizes,
-                                 :batch => job_batch)
+                                 :batch => job_batch,
+                                 :interesting_pages => interestingPages)
 
   DetectTablesJob.create(:filepath => filepath,
                          :output_dir => file_path,
@@ -186,11 +190,23 @@ Cuba.define do
   end # /get
 
   on post do
+    on 'import.json' do
+      filename = File.basename(req.params['source'])
+      interesting_pages = req.params['interesting_pages'].split(",").map { |s| s.to_i }
+      job_batch, file_id = *process(filename, req.params['source'], false, interesting_pages)
+      res.write(JSON.dump([{
+        :success => true,
+        :file_id => file_id,
+        :upload_id => job_batch,
+        :filename => filename
+      }]))
+    end
+
     on 'upload.json' do
       # Make sure this is a PDF, before doing anything
 
       if req.params['file'] # single upload mode. this should be deleting once if decide to enable multiple upload for realzies
-        job_batch, file_id = *upload(req.params['file'])
+        job_batch, file_id = *process(req.params['file'][:filename], req.params['file'][:tempfile], true, [])
         unless is_valid_pdf?(req.params['file'][:tempfile].path)
           res.status = 400
           res.write(JSON.dump({
@@ -211,7 +227,7 @@ Cuba.define do
       elsif req.params['files']
         statuses = req.params['files'].map do |file|
           if is_valid_pdf?(file[:tempfile].path)
-            job_batch, file_id = *upload(file)
+            job_batch, file_id = *process(file[:filename], file[:tempfile], true, [])
             {
               :filename => file[:filename],
               :success => true,

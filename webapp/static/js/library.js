@@ -14,7 +14,7 @@ Tabula.FileUpload = Backbone.Model.extend({
   checkStatus: function() {
     if(typeof this.get('file_id') == 'undefined' && typeof !this.get('upload_id') == 'undefined'){
       this.pct_complete = 1;
-      this.message = "waiting to be processed..."
+      this.message = "waiting to be processed...";
     }else{
       $.ajax({
           dataType: 'json',
@@ -62,13 +62,13 @@ Tabula.FileUpload = Backbone.Model.extend({
 Tabula.Document = Backbone.Model.extend({
   source: null,
   title: null,
-  pages: null,
+  interesting_pages: null,
   date: null,
   company: null,
   initialize: function() {
     this.set('source', this.get('source') || null);
     this.set('title', this.get('title') || null);
-    this.set('pages', this.get('pages') || null);
+    this.set('interesting_pages', this.get('interesting_pages') || null);
     this.set('date', this.get('date') || null);
     this.set('company', this.get('company').name || null);
   }
@@ -86,7 +86,7 @@ Tabula.DocumentCollection = Backbone.Collection.extend({
 
 Tabula.FileUploadsCollection = Backbone.Collection.extend({
   model: Tabula.FileUpload,
-  comparator: function(i){ return -i.get('uploadTime') - i.get('uploadOrder')},
+  comparator: function(i){ return -i.get('uploadTime') - i.get('uploadOrder'); },
 });
 
 Tabula.UploadedFile = Backbone.Model.extend({
@@ -94,14 +94,14 @@ Tabula.UploadedFile = Backbone.Model.extend({
   page_count: null,
   initialize: function(){
     this.set('size', this.get('size') || null);
-    this.set('page_count', this.get('page_count') || null)
+    this.set('page_count', this.get('page_count') || null);
   }
 });
 
 Tabula.UploadedFilesCollection = Backbone.Collection.extend({
     model: Tabula.UploadedFile,
-    url: function(){ return '/pdfs/workspace.json'+ '?' + Number(new Date()).toString() },
-    comparator: function(i){ return -i.get('time')},
+    url: function(){ return '/pdfs/workspace.json'+ '?' + Number(new Date()).toString(); },
+    comparator: function(i){ return -i.get('time'); },
     parse: function(items){
       _(items).each(function(i){
         if(!i.original_filename){
@@ -111,7 +111,7 @@ Tabula.UploadedFilesCollection = Backbone.Collection.extend({
       // if it's still being processed, don't enter it into the library.
       items = _(items).reject(_.bind(function(uploaded_file){
         var in_progress = Tabula.library && Tabula.library.uploads_collection.findWhere({file_id: uploaded_file.id});
-        return in_progress
+        return in_progress;
       }, this));
       return items;
     }
@@ -151,10 +151,28 @@ Tabula.UploadedFileView = Backbone.View.extend({
 Tabula.DocumentView = Backbone.View.extend({
   tagName: 'tr',
   className: 'uploaded-file',
+  events: {
+    'click .import-document': 'importDocument'
+  },
   template: _.template($('#document-template').html().replace(/nestedscript/g, 'script')),
+  initialize: function() {
+    _.bindAll(this, 'render', 'importDocument');
+  },
   render: function() {
     this.$el.append(this.template(this.model.attributes));
     return this;
+  },
+  importDocument: function(e) {
+    var btn = $(e.currentTarget);
+    var source = btn.attr('data-source');
+
+    var doc = Tabula.library.documents_collection.findWhere({source: source});
+
+    var data = new FormData();
+    data.append("source", source)
+    data.append("interesting_pages", doc.get('interesting_pages'))
+
+    Tabula.library.uploadPDF([{name: source.split('\\').pop().split('/').pop()}], "/import.json", data);
   }
 });
 
@@ -167,7 +185,7 @@ Tabula.ProgressBars = Backbone.View.extend({
   render: function(){
     if(this.uploads_collection.size() > 0){
       this.in_progress = false;
-      if(!$.trim(this.$el.html())) this.$el.html(this.template({}))
+      if(!$.trim(this.$el.html())) this.$el.html(this.template({}));
     }else if(!this.in_progress){
       //TODO: this belongs in Library, technically, but we don't go around rerendering that, so here it is for now.
       $('form#upload').find('button').removeAttr('disabled');
@@ -179,11 +197,11 @@ Tabula.ProgressBars = Backbone.View.extend({
 
 Tabula.Library = Backbone.View.extend({
     events: {
-        "submit form#upload": 'uploadPDF',
+        "submit form#upload": 'onUploadClick',
     },
     template: _.template( $('#uploader-template').html().replace(/nestedscript/g, 'script')),
     initialize: function(){
-      _.bindAll(this, 'uploadPDF', 'render', 'renderFileLibrary');
+      _.bindAll(this, 'onUploadClick', 'render', 'renderFileLibrary');
       this.files_collection = new Tabula.UploadedFilesCollection([]);
       this.files_collection.fetch({silent: true, complete: _.bind(function(){ this.render(); this.renderFileLibrary(); }, this) });
       this.listenTo(this.files_collection, 'add', this.renderFileLibrary);
@@ -214,30 +232,36 @@ Tabula.Library = Backbone.View.extend({
         api_version: Tabula.api_version
       })).show();
     },
-    uploadPDF: function(e){
-      $(e.currentTarget).find('button').attr('disabled', 'disabled');
+    onUploadClick: function(e) {
+      var files_list = $(e.currentTarget).find('#file')[0].files;
+      var url = $('form#upload').attr('action');
+      var formdata = new FormData($('form#upload')[0]);
+      this.uploadPDF(files_list, url, formdata);
+
+      e.preventDefault();
+      return false; // don't actually submit the form
+    },
+    uploadPDF: function(files, url, data){
       this.progress_bars = new Tabula.ProgressBars({el: '#progress-container', uploads_collection: this.uploads_collection });
       this.progress_bars.in_progress = true;
       this.progress_bars.render();
 
-      var files_list = $(e.currentTarget).find('#file')[0].files
-      _(files_list).each(_.bind(function(file, index){
+      _(files).each(_.bind(function(file, index){
         //TODO: the model should get the data, then fire an event that the view listens for, to rerender
         var file_upload = new Tabula.FileUpload({
           collection: this.uploads_collection,
           filename: file.name,
           uploadTime: new Date(),
           uploadOrder: index,
-          isOneOfMultiple: files_list.length != 1
+          isOneOfMultiple: files.length != 1
         });
         this.uploads_collection.add(file_upload);
         var checker = new Tabula.ProgressBar({model: file_upload });
-        this.progress_bars.render().$el.find('#progress-bars-container').append(checker.render().el)
+        this.progress_bars.render().$el.find('#progress-bars-container').append(checker.render().el);
       },this));
 
-      var formdata = new FormData($('form#upload')[0]);
       $.ajax({
-          url: $('form#upload').attr('action'),
+          url: url,
           type: 'POST',
           success: _.bind(function (res) {
               var statuses = JSON.parse(res);
@@ -245,7 +269,7 @@ Tabula.Library = Backbone.View.extend({
                 var file_upload = this.uploads_collection.findWhere({filename: status.filename });
                 if(!file_upload){
                   console.log("couldn't find upload objcect for " + status.filename );
-                  return
+                  return;
                 }
                 if(status.success){
                   file_upload.set('file_id', status.file_id);
@@ -254,32 +278,28 @@ Tabula.Library = Backbone.View.extend({
                   file_upload.set('error', !status.success);
                   file_upload.checkStatus(); //
                 }else{
-                  console.log('TODO: failure')
+                  console.log('TODO: failure');
                   file_upload.set('file_id', status.file_id);
                   file_upload.set('id', status.file_id);
                   file_upload.set('upload_id', status.upload_id);
                   file_upload.set('error', !status.success);
                 }
-              }, this))
+              }, this));
           }, this),
           error: _.bind(function(a,b,c){
             this.uploads_collection.each(function(file_upload){
               file_upload.message = "Sorry, your file upload could not be processed. ("+a.statusText+")";
               file_upload.pct_complete = 100;
               file_upload.error = true;
-            })
-            $(e.currentTarget).find('button').removeAttr('disabled');
+            });
           },this),
-          data: formdata,
+          data: data,
 
           cache: false,
           contentType: false,
           processData: false
       });
-      e.preventDefault();
-      return false; // don't actually submit the form
     },
-
     renderDocuments: function() {
       if (this.documents_collection.length > 0) {
         $('#document-container').show();
@@ -356,13 +376,13 @@ Tabula.ProgressBar = Backbone.View.extend({
         this.$el.find('h4').text("Upload Finished.");
         this.$el.find('#message').text('');
         if (!!this.spinobj) {
-            this.spinobj.stop()
-        };
+            this.spinobj.stop();
+        }
         if(this.model.get('isOneOfMultiple')){
           this.remove();
         }else{
           window.location = '/pdf/' + this.model.get('file_id');
-        };
+        }
       }else if(this.model.get('pct_complete') >= 100 && this.model.get('error')){
         this.$el.find('h4').text("Upload Failed.");
       }else{
