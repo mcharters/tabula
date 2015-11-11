@@ -1084,8 +1084,9 @@ Tabula.PDFView = Backbone.View.extend(
         var el = pdf_pages[i];
         if(isElementPartiallyInContainer(el, this.components['document_view'].el)){
           $('.page-thumbnail.active').removeClass('active');
-          this.components['sidebar_view'].thumbnail_views[i+1].$el.addClass('active');
-          new_cursor = Math.max(new_cursor, parseInt($(el).find('img').data('page')));
+          var page_num = parseInt($(el).find('img').data('page'))
+          this.components['sidebar_view'].thumbnail_views[page_num].$el.addClass('active');
+          new_cursor = Math.max(new_cursor, page_num);
           break;
         }
       }
