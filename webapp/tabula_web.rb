@@ -253,6 +253,35 @@ Cuba.define do
       end
     end
 
+    on "pdf/:file_id/save_tsv" do |file_id|
+      pdf_path = File.join(TabulaSettings::DOCUMENTS_BASEPATH, file_id, 'document.pdf')
+
+      coords = JSON.load(req.params['coords'])
+      coords.sort_by! do |coord_set|
+        [
+         coord_set['page'],
+         [coord_set['y1'], coord_set['y2']].min.to_i / 10,
+         [coord_set['x1'], coord_set['x2']].min
+        ]
+      end
+
+      tables = Tabula.extract_tables(pdf_path, coords)
+
+      basename = File.basename(req.params['new_filename'], File.extname(req.params['new_filename']))
+      table_type = req.params['table_type']
+
+      tables.each_with_index do |table, index|
+        page = coords[index]['page']
+        method = coords[index]['extraction_method']
+        filename = File.join(TabulaSettings::TSV_BASEPATH, "#{basename}-#{method}-#{table_type}-#{page}_#{index}.tsv")
+
+        File.write(filename, table.to_tsv)
+      end
+
+      res.redirect("/pdf/#{file_id}")
+      
+    end
+
     on "pdf/:file_id/data" do |file_id|
       pdf_path = File.join(TabulaSettings::DOCUMENTS_BASEPATH, file_id, 'document.pdf')
 
