@@ -256,19 +256,13 @@
             <div id="notification-alert"></div>
 
             <div id="upload-form-container">
-              <h4>Import one or more PDFs</h4>
-              <form id="upload" action="/upload.json" method="post" enctype="multipart/form-data" class="form-inline">
+              <h4>Search for documents by company name</h4>
+              <form id="upload" action="/search.json" method="post" enctype="multipart/form-data" class="form-inline">
 
               <div class="input-group">
-              <!-- we are using this here: http://www.abeautifulsite.net/whipping-file-inputs-into-shape-with-bootstrap-3/ -->
-                  <span class="input-group-btn">
-                      <span class="btn btn-primary btn-file">
-                          Browse&hellip; <input type="file" id="file" name="files[]" multiple accept="application/pdf">
-                      </span>
-                  </span>
-                  <input type="text" class="form-control" readonly>
+                <input name="terms" type="text" class="form-control">
               </div>
-                 <button type="submit" class="btn btn-default">Import</button>
+                 <button type="submit" class="btn btn-default">Search</button>
               </form>
 
             </div>

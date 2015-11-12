@@ -190,6 +190,25 @@ Cuba.define do
   end # /get
 
   on post do
+    on 'search.json' do
+      res['Content-Type'] = 'application/json'
+
+      documents = []
+      search_terms = req.params['terms'].split()
+
+      Dir.foreach(TabulaSettings::SEDAR_DOCUMENTS_BASEPATH) do |file|
+        next if file == "." or file == ".."
+        search_terms.each do |term|
+          if file.downcase.include? term.downcase
+            documents << File.read(File.join(TabulaSettings::SEDAR_DOCUMENTS_BASEPATH, file))
+            break
+          end
+        end
+      end
+
+      res.write('{"documents":[' + documents.join(',') + ']}')
+    end
+
     on 'import.json' do
       filename = File.basename(req.params['source'])
       interesting_pages = req.params['interesting_pages'].split(",").map { |s| s.to_i }

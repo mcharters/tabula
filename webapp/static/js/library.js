@@ -206,13 +206,7 @@ Tabula.Library = Backbone.View.extend({
       this.files_collection.fetch({silent: true, complete: _.bind(function(){ this.render(); this.renderFileLibrary(); }, this) });
       this.listenTo(this.files_collection, 'add', this.renderFileLibrary);
       this.uploads_collection = new Tabula.FileUploadsCollection([]);
-
       this.documents_collection = new Tabula.DocumentCollection([]);
-      this.documents_collection.fetch({
-        complete: _.bind(function() {
-          this.renderDocuments();
-        }, this)
-      });
 
       this.listenTo(Tabula.notification, 'change', this.renderNotification);
       this.listenTo(Tabula.new_version, 'change', this.renderVersion);
@@ -233,10 +227,26 @@ Tabula.Library = Backbone.View.extend({
       })).show();
     },
     onUploadClick: function(e) {
-      var files_list = $(e.currentTarget).find('#file')[0].files;
-      var url = $('form#upload').attr('action');
       var formdata = new FormData($('form#upload')[0]);
-      this.uploadPDF(files_list, url, formdata);
+      var url = $('form#upload').attr('action');
+
+      $.ajax({
+        url: url,
+        type: 'POST',
+        success: _.bind(function(res) {
+          this.documents_collection.reset();
+          _(res.documents).each(_.bind(function(docObj) {
+            var doc = new Tabula.Document(docObj);
+            this.documents_collection.add(doc);
+          }, this));
+
+          this.renderDocuments();
+        }, this),
+        data: formdata,
+        cache: false,
+        contentType: false,
+        processData: false
+      });
 
       e.preventDefault();
       return false; // don't actually submit the form
@@ -301,6 +311,8 @@ Tabula.Library = Backbone.View.extend({
       });
     },
     renderDocuments: function() {
+      $('#document-table').empty();
+
       if (this.documents_collection.length > 0) {
         $('#document-container').show();
         this.documents_collection.each(_.bind(function(doc) {
