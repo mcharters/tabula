@@ -80,6 +80,7 @@ module TabulaSettings
   DOCUMENTS_BASEPATH = File.join(self.getDataDir, 'pdfs')
   SEDAR_DOCUMENTS_BASEPATH = File.join(SEDAR_DATA_DIR, 'json')
   TSV_BASEPATH = File.join(SEDAR_DATA_DIR, 'tsv')
+  LOGS_BASEPATH = File.join(SEDAR_DATA_DIR, 'logs')
   ENABLE_DEBUG_METHODS = self.enableDebug
 
   puts "DATA_DIR = #{self.getDataDir}"

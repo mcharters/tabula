@@ -289,14 +289,18 @@ Cuba.define do
       basename = File.basename(req.params['new_filename'], File.extname(req.params['new_filename']))
       table_type = req.params['table_type']
 
+      log_file = File.open(File.join(TabulaSettings::LOGS_BASEPATH, DateTime.now().strftime('manual_tsvs_%Y-%m-%d.log')), 'a')
+
       tables.each_with_index do |table, index|
         page = coords[index]['page']
         method = coords[index]['extraction_method']
         filename = File.join(TabulaSettings::TSV_BASEPATH, "#{basename}-#{method}-#{table_type}-#{page}_#{index}.tsv")
 
         File.write(filename, table.to_tsv)
+        log_file.write("#{filename}\n")
       end
 
+      log_file.close()
       res.redirect("/pdf/#{file_id}")
       
     end
