@@ -294,7 +294,7 @@ Cuba.define do
       tables.each_with_index do |table, index|
         page = coords[index]['page']
         method = coords[index]['extraction_method']
-        filename = File.join(TabulaSettings::TSV_BASEPATH, "#{basename}-#{method}-#{table_type}-#{page}_#{index}.tsv")
+        filename = File.join(TabulaSettings::TSV_BASEPATH, "#{basename}-#{table_type}-#{page}_#{index}.#{method}.tsv")
 
         File.write(filename, table.to_tsv)
         log_file.write("#{filename}\n")
