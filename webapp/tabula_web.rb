@@ -198,11 +198,17 @@ Cuba.define do
 
       Dir.foreach(TabulaSettings::SEDAR_DOCUMENTS_BASEPATH) do |file|
         next if file == "." or file == ".."
+
+        terms_found = true
         search_terms.each do |term|
-          if file.downcase.include? term.downcase
-            documents << File.read(File.join(TabulaSettings::SEDAR_DOCUMENTS_BASEPATH, file))
+          if not file.downcase.include? term.downcase
+            terms_found = false
             break
           end
+        end
+
+        if terms_found
+          documents << File.read(File.join(TabulaSettings::SEDAR_DOCUMENTS_BASEPATH, file))
         end
       end
 
