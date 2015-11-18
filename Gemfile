@@ -7,6 +7,8 @@ platform :jruby do
   gem "cuba"
   gem "rack"
   gem "tilt"
+  gem "shield"
+  gem "basica"
 
   group :development do
     gem "rake"

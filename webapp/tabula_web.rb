@@ -8,6 +8,8 @@ require 'csv'
 require 'tempfile'
 require 'fileutils'
 require 'securerandom'
+require 'shield'
+require 'basica'
 
 require_relative '../lib/jars/tabula-extractor-0.7.4-SNAPSHOT-jar-with-dependencies.jar'
 
@@ -38,6 +40,16 @@ def is_valid_pdf?(path)
   File.open(path, 'r') { |f| f.read(4) } == '%PDF'
 end
 
+class User < Struct.new(:email, :crypted_password)
+  include Shield::Model
+
+  def self.fetch(email)
+    user = new(email)
+    user.password = 'Ch@rity123'
+
+    return user
+  end
+end
 
 STATIC_ROOT = if defined?($servlet_context)
                 File.join($servlet_context.getRealPath('/'), 'WEB-INF/webapp/static')
@@ -46,6 +58,7 @@ STATIC_ROOT = if defined?($servlet_context)
               end
 
 Cuba.plugin Cuba::Render
+Cuba.plugin Basica
 Cuba.settings[:render].store(:views, File.expand_path("views", File.dirname(__FILE__)))
 Cuba.use Rack::MethodOverride
 Cuba.use Rack::Static, root: STATIC_ROOT, urls: ["/css","/js", "/img", "/swf", "/fonts"]
@@ -97,6 +110,20 @@ def process(filename, filelocation, deleteFile, interestingPages)
 end
 
 Cuba.define do
+
+  on env["HTTP_AUTHORIZATION"].nil? do
+    res.status = 401
+    res.headers["WWW-AUTHENTICATE"] = 'Basic realm="TSP Tabula"'
+    res.write "Unauthorized"
+  end
+
+  basic_auth(env) do |user, pass|
+    if User.authenticate(user, pass) == nil
+      res.status = 401
+      res.headers["WWW-AUTHENTICATE"] = 'Basic realm="TSP Tabula"'
+      res.write "Unauthorized"
+    end
+  end
 
   if TabulaSettings::ENABLE_DEBUG_METHODS
     require_relative './tabula_debug.rb'

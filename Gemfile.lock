@@ -1,9 +1,11 @@
 GEM
   remote: https://rubygems.org/
   specs:
+    armor (0.0.3)
     autoprefixer-rails (5.1.11)
       execjs
       json
+    basica (0.0.1)
     bootstrap-sass (3.3.4.1)
       autoprefixer-rails (>= 5.0.0.1)
       sass (>= 3.2.19)
@@ -35,6 +37,8 @@ GEM
       ffi (>= 0.5.0)
     rubyzip (1.1.7)
     sass (3.4.13)
+    shield (2.1.1)
+      armor
     tilt (2.0.1)
     warbler (1.4.9)
       jruby-jars (>= 1.5.6, < 2.0)
@@ -46,12 +50,14 @@ PLATFORMS
   java
 
 DEPENDENCIES
+  basica
   bootstrap-sass
   compass
   cuba
   jruby-jars (= 1.7.22)
   rack
   rake
+  shield
   tilt
   warbler (~> 1.4.9)
 
