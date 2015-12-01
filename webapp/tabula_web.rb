@@ -105,7 +105,8 @@ def process(filename, filelocation, deleteFile, interestingPages)
                               :filepath => filepath,
                               :output_dir => file_path,
                               :thumbnail_sizes => thumbnail_sizes,
-                              :batch => job_batch)
+                              :batch => job_batch,
+                              :interesting_pages => interestingPages)
   return [job_batch, file_id]
 end
 

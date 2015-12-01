@@ -11,8 +11,9 @@ class GenerateThumbnailJob < Tabula::Background::Job
     filepath = options[:filepath]
     output_dir = options[:output_dir]
     thumbnail_sizes = options[:thumbnail_sizes]
+    pages = options[:interesting_pages]
 
-    generator = JPedalThumbnailGenerator.new(filepath, output_dir, thumbnail_sizes)
+    generator = JPedalThumbnailGenerator.new(filepath, output_dir, thumbnail_sizes, pages)
     generator.add_observer(self, :at)
     generator.generate_thumbnails!
 

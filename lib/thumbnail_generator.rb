@@ -49,22 +49,24 @@ class MUDrawThumbnailGenerator < AbstractThumbnailGenerator
 end
 
 class JPedalThumbnailGenerator < AbstractThumbnailGenerator
-  def initialize(pdf_filename, output_directory, sizes=[2048, 560])
+  def initialize(pdf_filename, output_directory, sizes=[2048, 560], pages=[])
     super(pdf_filename, output_directory, sizes)
     @decoder = PdfDecoder.new(true)
     FontMappings.setFontReplacements
     @decoder.openPdfFile(pdf_filename)
     @decoder.setExtractionMode(0, 1.0)
     @decoder.useHiResScreenDisplay(true)
+    @pages = pages
+    if @pages.length == 0
+      @pages = [*1..@decoder.getPageCount]
+    end
   end
 
   def generate_thumbnails!
-    total_pages = @decoder.getPageCount
-
-    total_pages.times do |i|
+    @pages.each_with_index do |page, i|
 
       begin
-        image = @decoder.getPageAsImage(i+1);
+        image = @decoder.getPageAsImage(page);
         image_w, image_h = image.getWidth, image.getHeight
 
         @sizes.each do |s|
@@ -74,9 +76,9 @@ class JPedalThumbnailGenerator < AbstractThumbnailGenerator
           ImageIO.write(bi,
                         'png',
                         java.io.File.new(File.join(@output_directory,
-                                                   "document_#{s}_#{i+1}.png")))
+                                                   "document_#{s}_#{page}.png")))
           changed
-          notify_observers(i+1, total_pages, "generating page thumbnails...")
+          notify_observers(i+1, @pages.length, "generating page thumbnails...")
         end
       rescue java.lang.RuntimeException
         # TODO What?
