@@ -245,7 +245,10 @@ Cuba.define do
 
     on 'import.json' do
       filename = File.basename(req.params['source'])
-      interesting_pages = req.params['interesting_pages'].split(",").map { |s| s.to_i }
+      interesting_pages = []
+      if req.params['interesting_pages']
+        interesting_pages = req.params['interesting_pages'].split(",").map { |s| s.to_i }
+      end
       job_batch, file_id = *process(filename, req.params['source'], false, interesting_pages)
       res.write(JSON.dump([{
         :success => true,

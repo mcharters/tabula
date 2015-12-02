@@ -279,7 +279,18 @@
                 <h4>Sedar Documents</h4>
 
                 <div id="document-list-container">
-                  <table class="table" id="document-table">
+                  <table class="table">
+                    <thead>
+                      <tr>
+                        <th>Company Name</th>
+                        <th>Document</th>
+                        <th>Date Published</th>
+                        <th>Import All Pages</th>
+                        <th></th>
+                      </tr>
+                    </thead>
+                    <tbody id="document-table">
+                    </tbody>
                   </table>
                 </div>
               </div>
@@ -318,6 +329,7 @@
         <td><%= company %></td>
         <td><%= title %></td>
         <td><%= date %></td>
+        <td class="import-all-pages" style="text-align: center;"><input type="checkbox" /></td>
         <td><a href="javascript:" class="import-document" data-source=<%= source %>><button type="button" class="btn btn-sm btn-success">Import File</button></a></td>
       </script>
 

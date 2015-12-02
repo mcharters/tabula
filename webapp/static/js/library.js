@@ -166,13 +166,16 @@ Tabula.DocumentView = Backbone.View.extend({
   },
   importDocument: function(e) {
     var btn = $(e.currentTarget);
+    var importAll = btn.parents("td").siblings(".import-all-pages").find(":checkbox");
     var source = btn.attr('data-source');
 
     var doc = Tabula.library.documents_collection.findWhere({source: source});
 
     var data = new FormData();
     data.append("source", source)
-    data.append("interesting_pages", doc.get('interesting_pages'))
+    if (!importAll.is(":checked")) {
+      data.append("interesting_pages", doc.get('interesting_pages'));
+    }
 
     Tabula.library.uploadPDF([{name: source.split('\\').pop().split('/').pop()}], "/import.json", data);
   }
