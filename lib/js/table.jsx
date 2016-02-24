@@ -97,14 +97,18 @@ var Table = React.createClass({
 
 var Tables = React.createClass({
 	render: function() {
-		var tables = [];
-		this.props.tables.forEach(function(table, index) {
-			tables.push(<Table key={index} rows={table} />);
-		});
+		if (this.props.tables.length > 0) {
+			var tables = [];
+			this.props.tables.forEach(function(table, index) {
+				tables.push(<Table key={index} rows={table} />);
+			});
 
-		return (
-			<div>{tables}</div>
-		);
+			return (
+				<div>{tables}</div>
+			);
+		} else {
+			return (<span className="no-data">No data.</span>);
+		}
 	}
 });
 
