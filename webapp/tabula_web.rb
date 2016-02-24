@@ -309,6 +309,25 @@ Cuba.define do
       end
     end
 
+    on "pdf/:file_id/preview_extracted" do |file_id|
+      table = JSON.load(req.params['table'])
+
+      basename = File.basename(req.params['new_filename'], File.extname(req.params['new_filename']))
+      table_type = req.params['table_type']
+      method = req.params['extraction_method']
+
+      tsv_path = File.join(TabulaSettings::DOCUMENTS_BASEPATH, file_id, "#{basename}-#{table_type}.#{method}.tsv")
+      CSV.open(tsv_path, 'wb', {:col_sep => "\t"}) do |csv|
+        table.each do |row|
+          csv << row
+        end
+      end
+
+      people = `python #{TabulaSettings::SCRIPTS_BASEPATH}/people_from_tsv.py #{tsv_path}`
+
+      res.write(people)
+    end
+
     on "pdf/:file_id/save_tsv" do |file_id|
       pdf_path = File.join(TabulaSettings::DOCUMENTS_BASEPATH, file_id, 'document.pdf')
 
