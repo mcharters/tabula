@@ -76,7 +76,9 @@ module TabulaSettings
 
 
   ########## Constants that are used around the app, based on settings ##########
-  SEDAR_DATA_DIR = "C:\\Users\\Matt\\Documents\\GitHub\\charitycan\\data\\sedar"
+  CHARITYCAN_DIR = "C:\\Users\\Matt\\Documents\\GitHub\\charitycan"
+  SEDAR_DATA_DIR = File.join(CHARITYCAN_DIR, "data", "sedar")
+  SCRIPTS_BASEPATH = File.join(CHARITYCAN_DIR, "scripts")
   DOCUMENTS_BASEPATH = File.join(self.getDataDir, 'pdfs')
   SEDAR_DOCUMENTS_BASEPATH = File.join(SEDAR_DATA_DIR, 'json')
   TSV_BASEPATH = File.join(SEDAR_DATA_DIR, 'tsv')

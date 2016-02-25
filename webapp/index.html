@@ -22,11 +22,7 @@
       <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
       <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
     <![endif]-->
-
     <script type="text/javascript" src="/js/vendor/jquery.min.js"></script>
-    <script type="text/javascript" src="/js/vendor/underscore-min.js"></script>
-    <script type="text/javascript" src="/js/vendor/backbone-min.js"></script>
-    <script type="text/javascript" src="/js/vendor/bootstrap.js"></script>
   </head>
 
 
@@ -101,7 +97,11 @@
             <option value="script">Script</option>
           </select>
           -->
-          <button type="submit" <%=disableIfNoData%> id="download-data" class="btn btn-default" data-action='/pdf/<%=pdf_id%>/save_tsv'>
+          <button type="submit" <%=disableIfNoData%> id="preview-data" class="btn btn-default" data-action='/pdf/<%=pdf_id%>/preview_extracted'>
+            <span class="glyphicon glyphicon-eye-open"></span>
+            Preview
+          </button>
+          <button type="submit" disabled='disabled' id="download-data" class="btn btn-default" data-action='/pdf/<%=pdf_id%>/save_people'>
             <span class="glyphicon glyphicon-refresh"></span>
             <span class="glyphicon glyphicon-floppy-save"></span>
             Save
@@ -160,31 +160,11 @@
             <div id="control-panel">
             </div>
 
-           <h2>Preview of Extracted Tabular Data</h2>
             <div id="table-container">
-            <% if(data.length){ %>
-              <% _(data).each(function(table){ %>
-              <table class="table table-bordered extracted-data">
-                <tbody>
-                <% _(table).each(function(row){ %>
-                  <tr>
-                    <% _(row).each(function(cell){ %>
-                      <td><%= cell %></td>
-                    <% }) %>
-                  </tr>
-                <% }) %>
-                </tbody>
-              </table>
-              <% }) %>
-            <% } else if (loading) { %>
-             <div class="alert alert-success" id="loading"><span id="spinner"></span><span style="position: relative; left: 16px; font-size: 24px;">Loading...</span></div>
-            <% } else if (error_message) { %>
-               <p><strong>Tabula</strong> couldn't finish processing your request. We'd appreciate if you could <a href="https://github.com/jazzido/tabula/issues/new">report this error in our issue tracker</a>. If possible, please include a link to the document that caused the error and the text below:</p>
-                 <pre class="error"><%= error_message %></pre>
-            <% } else { %>
-              <span class="no-data">No data.</span>
-            <% } %>
             </div>
+          
+          <div id="people-container">
+          </div>
         </div>
       </script>
 
@@ -199,11 +179,6 @@
           <div id="pages-container">
           </div>
         </div>
-        <nestedscript type="text/javascript" src="/js/vendor/spin.min.js"></nestedscript> 
-        <nestedscript type="text/javascript" src="/js/resizableSelection.js"></nestedscript> 
-        <nestedscript type="text/javascript" src="/js/rectangularSelector.js"></nestedscript> 
-        <nestedscript type="text/javascript" src="/js/vendor/ZeroClipboard.min.js"></nestedscript> 
-        <!-- <nestedscript type="text/javascript" src="/js/debug_pdf_view.js"></nestedscript>  -->
       </script>
 
 
@@ -320,9 +295,6 @@
         </div> <!-- /container -->
 
         <!-- we are using this here: http://www.abeautifulsite.net/whipping-file-inputs-into-shape-with-bootstrap-3/ -->
-        <nestedscript type="text/javascript" src="/js/vendor/upload-group.js"></nestedscript> 
-        <nestedscript type="text/javascript" src="/js/vendor/jquery.tablesorter.min.js"></nestedscript>
-        <nestedscript type="text/javascript" src="/js/vendor/spin.min.js"></nestedscript> 
       </script>
 
       <script type="text/template" id="document-template">
@@ -419,7 +391,7 @@
 
     </script> <!-- TODO: move this to tabula.js, only run it if we're in upload page viewer -->
 
-    <script type="text/javascript" src="/js/tabula.js?_cachebuster=201510300905"></script> <!-- actually starts Tabula -->
+    <script type="text/javascript" src="http://localhost:3000/bundle.js?_cachebuster=201510300905"></script> <!-- actually starts Tabula -->
 
   </body>
 </html>
