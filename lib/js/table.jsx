@@ -104,7 +104,10 @@ var Tables = React.createClass({
 			});
 
 			return (
-				<div>{tables}</div>
+				<div>
+					<h2>Preview of Tabular Data</h2>
+					{tables}
+				</div>
 			);
 		} else {
 			return (<span className="no-data">No data.</span>);

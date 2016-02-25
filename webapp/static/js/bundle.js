@@ -54,7 +54,7 @@
 /******/ 	
 /******/ 	
 /******/ 	var hotApplyOnUpdate = true;
-/******/ 	var hotCurrentHash = "e21169da803ee757d2d5"; // eslint-disable-line no-unused-vars
+/******/ 	var hotCurrentHash = "a6f065db071b37d1c4c2"; // eslint-disable-line no-unused-vars
 /******/ 	var hotCurrentModuleData = {};
 /******/ 	var hotCurrentParents = []; // eslint-disable-line no-unused-vars
 /******/ 	
@@ -41059,6 +41059,9 @@
 	  var Table = __webpack_require__(269);
 	  var React = __webpack_require__(141);
 	  var ReactDOM = __webpack_require__(270);
+	  var ErrorMessage = __webpack_require__(271);
+	  var LoadingMessage = __webpack_require__(272);
+	  var PeopleView = __webpack_require__(273);
 
 	  var Tabula = {};
 	  $.ajaxSetup({ cache: false }); // fixes a dumb issue where Internet Explorer caches Ajax requests. See https://github.com/tabulapdf/tabula/issues/408
@@ -41254,7 +41257,7 @@
 	  // does flash work?
 	  // clear the input
 
-	  Tabula.Document = Backbone.Model.extend({
+	  Tabula.SearchResult = Backbone.Model.extend({
 	    source: null,
 	    title: null,
 	    interesting_pages: null,
@@ -41269,8 +41272,8 @@
 	    }
 	  });
 
-	  Tabula.DocumentCollection = Backbone.Collection.extend({
-	    model: Tabula.Document,
+	  Tabula.SearchResultCollection = Backbone.Collection.extend({
+	    model: Tabula.SearchResult,
 	    url: function () {
 	      return '/documents';
 	    },
@@ -41349,7 +41352,7 @@
 	    }
 	  });
 
-	  Tabula.DocumentView = Backbone.View.extend({
+	  Tabula.SearchResultView = Backbone.View.extend({
 	    tagName: 'tr',
 	    className: 'uploaded-file',
 	    events: {
@@ -41375,6 +41378,8 @@
 	      if (!importAll.is(":checked")) {
 	        data.append("interesting_pages", doc.get('interesting_pages'));
 	      }
+	      data.append("company", doc.get('company'));
+	      data.append("date", doc.get('date'));
 
 	      Tabula.library.uploadPDF([{ name: source.split('\\').pop().split('/').pop() }], "/import.json", data);
 	    }
@@ -41412,7 +41417,7 @@
 	        }, this) });
 	      this.listenTo(this.files_collection, 'add', this.renderFileLibrary);
 	      this.uploads_collection = new Tabula.FileUploadsCollection([]);
-	      this.documents_collection = new Tabula.DocumentCollection([]);
+	      this.documents_collection = new Tabula.SearchResultCollection([]);
 
 	      this.listenTo(Tabula.notification, 'change', this.renderNotification);
 	      this.listenTo(Tabula.new_version, 'change', this.renderVersion);
@@ -41442,7 +41447,7 @@
 	        success: _.bind(function (res) {
 	          this.documents_collection.reset();
 	          _(res.documents).each(_.bind(function (docObj) {
-	            var doc = new Tabula.Document(docObj);
+	            var doc = new Tabula.SearchResult(docObj);
 	            this.documents_collection.add(doc);
 	          }, this));
 
@@ -41522,7 +41527,7 @@
 	      if (this.documents_collection.length > 0) {
 	        $('#document-container').show();
 	        this.documents_collection.each(_.bind(function (doc) {
-	          var doc_element = new Tabula.DocumentView({ model: doc }).render().$el;
+	          var doc_element = new Tabula.SearchResultView({ model: doc }).render().$el;
 	          $('#document-table').prepend(doc_element);
 	        }));
 	      }
@@ -41920,7 +41925,7 @@
 	            _(_.zip(this.get('list_of_coords'), resp)).each(function (stuff, i) {
 	              var coord_set = stuff[0];
 	              var resp_item = stuff[1];
-	              if (stashed_selections.get(coord_set.selection_id)) {
+	              if (typeof coord_set.selection_id !== 'undefined' && stashed_selections.get(coord_set.selection_id)) {
 	                stashed_selections.get(coord_set.selection_id).set('extraction_method', resp_item["extraction_method"]);
 	              }
 	              coord_set["extraction_method"] = resp_item["extraction_method"];
@@ -41990,7 +41995,8 @@
 
 	    events: {
 	      'click .extraction-method-btn:not(.active)': 'queryWithToggledExtractionMethod',
-	      'click #download-data': 'setFormAction',
+	      'click #download-data': 'save',
+	      'click #preview-data': 'preview',
 	      'keyup .filename': 'updateFilename',
 	      //N.B.: Download button (and format-specific download buttons) are an HTML form, so not handled here.
 	      //TODO: handle flash clipboard thingy here.
@@ -42001,7 +42007,7 @@
 	    extractionMethod: "guess",
 
 	    initialize: function (stuff) {
-	      _.bindAll(this, 'render', 'renderFlashClipboardNonsense', 'updateFilename', 'queryWithToggledExtractionMethod', 'closeAndRenderSelectionView', 'setFormAction');
+	      _.bindAll(this, 'render', 'renderFlashClipboardNonsense', 'updateFilename', 'queryWithToggledExtractionMethod', 'closeAndRenderSelectionView', 'save', 'preview');
 	      this.pdf_view = stuff.pdf_view;
 	      this.listenTo(this.model, 'tabula:query-start', this.render);
 	      this.listenTo(this.model, 'tabula:query-success', this.render);
@@ -42028,12 +42034,12 @@
 	      this.pdf_view.$el.show();
 	      this.pdf_view.render();
 
-	      var oldSelections = this.pdf_view.pdf_document.selections.models.map(function (sel) {
+	      /*var oldSelections = this.pdf_view.pdf_document.selections.models.map(function(sel){
 	        var selection = Tabula.pdf_view.renderSelection(sel.toCoords());
 	        // selection.attributes.rebind(); // o. m. g.
 	        return selection;
-	      });
-	      this.pdf_view.pdf_document.selections.reset(oldSelections);
+	      });*/
+	      this.pdf_view.pdf_document.selections.reset([]);
 	    },
 
 	    setFormAction: function (e) {
@@ -42041,6 +42047,61 @@
 	      this.$el.find('#download-form').attr('action', formActionUrl);
 	      this.$el.find('#download-form').submit();
 	      this.disableDownloadButton();
+	    },
+
+	    preview: function (e) {
+	      var formdata = new FormData($('form#download-form')[0]);
+	      formdata.append("table", JSON.stringify(this.tables.props.tables[0]));
+
+	      var url = $(e.currentTarget).data('action');
+
+	      ReactDOM.unmountComponentAtNode(document.getElementById('people-container'));
+	      ReactDOM.render(React.createElement(LoadingMessage), document.getElementById('people-container'));
+
+	      $.ajax({
+	        type: 'POST',
+	        url: url,
+	        data: formdata,
+	        dataType: 'json',
+	        success: _.bind(function (data) {
+	          ReactDOM.unmountComponentAtNode(document.getElementById('people-container'));
+	          this.peopleView = ReactDOM.render(React.createElement(PeopleView, { 'people': data }), document.getElementById('people-container'));
+
+	          $('#download-data').prop('disabled', false);
+	        }, this),
+	        cache: false,
+	        contentType: false,
+	        processData: false
+	      });
+
+	      e.preventDefault();
+	    },
+
+	    save: function (e) {
+	      var formdata = new FormData($('form#download-form')[0]);
+	      formdata.append("people", JSON.stringify(this.peopleView.props.people));
+
+	      var url = $(e.currentTarget).data('action');
+
+	      ReactDOM.unmountComponentAtNode(document.getElementById('people-container'));
+	      ReactDOM.unmountComponentAtNode(document.getElementById('table-container'));
+	      ReactDOM.render(React.createElement(LoadingMessage), document.getElementById('table-container'));
+
+	      $.ajax({
+	        type: 'POST',
+	        url: url,
+	        data: formdata,
+	        dataType: 'json',
+	        success: _.bind(function (data) {
+	          ReactDOM.unmountComponentAtNode(document.getElementById('table-container'));
+	          ReactDOM.render(React.createElement(ErrorMessage, { 'error_message': data.message }), document.getElementById('table-container'));
+	        }, this),
+	        cache: false,
+	        contentType: false,
+	        processData: false
+	      });
+
+	      e.preventDefault();
 	    },
 
 	    render: function (e) {
@@ -42070,15 +42131,31 @@
 	        error_message: this.model.get('error_message')
 	      }));
 
-	      ReactDOM.unmountComponentAtNode(document.getElementById('table-container'));
-	      ReactDOM.render(React.createElement(Table, { 'tables': this.model.getDataArray() }), document.getElementById('table-container'));
-
 	      this.$el.find('#control-panel').html(_.template($('#templates #export-control-panel-template').html().replace(/nestedscript/g, 'script'))(_(this.pdf_view.pdf_document.attributes).extend({
 	        pdf_id: PDF_ID,
 	        list_of_coords: JSON.stringify(this.model.get('list_of_coords')),
 	        copyDisabled: Tabula.pdf_view.flash_borked ? 'disabled="disabled" data-toggle="tooltip" title="' + Tabula.pdf_view.flash_borken_message + '"' : '',
 	        disableIfNoData: _.isNull(this.model.get('data')) || typeof this.model.get('data') === "undefined" ? 'disabled="disabled"' : ''
 	      })));
+
+	      ReactDOM.unmountComponentAtNode(document.getElementById('table-container'));
+
+	      var data = this.model.getDataArray();
+	      if (data.length > 0) {
+	        this.tables = ReactDOM.render(React.createElement(Table, {
+	          'tables': this.model.getDataArray(),
+	          'loading': !(this.model.get('data') || this.model.get('error_message')),
+	          error_message: this.model.get('error_message')
+	        }), document.getElementById('table-container'));
+
+	        // now get the preview too
+	        $('#preview-data').click();
+	      } else if (!(this.model.get('data') || this.model.get('error_message'))) {
+	        ReactDOM.render(React.createElement(LoadingMessage), document.getElementById('table-container'));
+	      } else if (this.model.get('error_message')) {
+	        ReactDOM.render(React.createElement(ErrorMessage, { 'error_message': this.model.get('error_message') }), document.getElementById('table-container'));
+	      }
+
 	      this.$el.find('#sidebar').html(_.template($('#templates #export-page-sidebar-template').html().replace(/nestedscript/g, 'script'))({
 	        pdf_id: PDF_ID,
 	        disableExtractionMethodButtons: _.isNull(this.model.data) || uniq_extraction_methods.length > 1 ? 'disabled="disabled"' : ''
@@ -58090,16 +58167,29 @@
 		displayName: 'Tables',
 
 		render: function () {
-			var tables = [];
-			this.props.tables.forEach(function (table, index) {
-				tables.push(React.createElement(Table, { key: index, rows: table }));
-			});
+			if (this.props.tables.length > 0) {
+				var tables = [];
+				this.props.tables.forEach(function (table, index) {
+					tables.push(React.createElement(Table, { key: index, rows: table }));
+				});
 
-			return React.createElement(
-				'div',
-				null,
-				tables
-			);
+				return React.createElement(
+					'div',
+					null,
+					React.createElement(
+						'h2',
+						null,
+						'Preview of Tabular Data'
+					),
+					tables
+				);
+			} else {
+				return React.createElement(
+					'span',
+					{ className: 'no-data' },
+					'No data.'
+				);
+			}
 		}
 	});
 
@@ -58123,6 +58213,356 @@
 	module.exports = __webpack_require__(143);
 
 	}.call(window));
+
+/***/ },
+/* 271 */
+/***/ function(module, exports, __webpack_require__) {
+
+	/* WEBPACK VAR INJECTION */(function(module) {/* REACT HOT LOADER */ if (true) { (function () { var ReactHotAPI = __webpack_require__(79), RootInstanceProvider = __webpack_require__(87), ReactMount = __webpack_require__(89), React = __webpack_require__(141); module.makeHot = module.hot.data ? module.hot.data.makeHot : ReactHotAPI(function () { return RootInstanceProvider.getRootInstances(ReactMount); }, React); })(); } try { (function () {
+
+	var React = __webpack_require__(141);
+
+	var ErrorMessage = React.createClass({
+		displayName: "ErrorMessage",
+
+		render: function () {
+			return React.createElement(
+				"pre",
+				{ className: "error" },
+				this.props.error_message
+			);
+		}
+	});
+
+	module.exports = ErrorMessage;
+
+	/* REACT HOT LOADER */ }).call(this); } finally { if (true) { (function () { var foundReactClasses = module.hot.data && module.hot.data.foundReactClasses || false; if (module.exports && module.makeHot) { var makeExportsHot = __webpack_require__(250); if (makeExportsHot(module, __webpack_require__(141))) { foundReactClasses = true; } var shouldAcceptModule = true && foundReactClasses; if (shouldAcceptModule) { module.hot.accept(function (err) { if (err) { console.error("Cannot not apply hot update to " + "error-message.jsx" + ": " + err.message); } }); } } module.hot.dispose(function (data) { data.makeHot = module.makeHot; data.foundReactClasses = foundReactClasses; }); })(); } }
+	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(6)(module)))
+
+/***/ },
+/* 272 */
+/***/ function(module, exports, __webpack_require__) {
+
+	/* WEBPACK VAR INJECTION */(function(module) {/* REACT HOT LOADER */ if (true) { (function () { var ReactHotAPI = __webpack_require__(79), RootInstanceProvider = __webpack_require__(87), ReactMount = __webpack_require__(89), React = __webpack_require__(141); module.makeHot = module.hot.data ? module.hot.data.makeHot : ReactHotAPI(function () { return RootInstanceProvider.getRootInstances(ReactMount); }, React); })(); } try { (function () {
+
+	var React = __webpack_require__(141);
+
+	var LoadingMessage = React.createClass({
+		displayName: "LoadingMessage",
+
+		render: function () {
+			return React.createElement(
+				"div",
+				{ className: "alert alert-success", id: "loading" },
+				React.createElement(
+					"span",
+					{ id: "spinner" },
+					"Loading..."
+				)
+			);
+		}
+	});
+
+	module.exports = LoadingMessage;
+
+	/* REACT HOT LOADER */ }).call(this); } finally { if (true) { (function () { var foundReactClasses = module.hot.data && module.hot.data.foundReactClasses || false; if (module.exports && module.makeHot) { var makeExportsHot = __webpack_require__(250); if (makeExportsHot(module, __webpack_require__(141))) { foundReactClasses = true; } var shouldAcceptModule = true && foundReactClasses; if (shouldAcceptModule) { module.hot.accept(function (err) { if (err) { console.error("Cannot not apply hot update to " + "loading-message.jsx" + ": " + err.message); } }); } } module.hot.dispose(function (data) { data.makeHot = module.makeHot; data.foundReactClasses = foundReactClasses; }); })(); } }
+	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(6)(module)))
+
+/***/ },
+/* 273 */
+/***/ function(module, exports, __webpack_require__) {
+
+	/* WEBPACK VAR INJECTION */(function(module) {/* REACT HOT LOADER */ if (true) { (function () { var ReactHotAPI = __webpack_require__(79), RootInstanceProvider = __webpack_require__(87), ReactMount = __webpack_require__(89), React = __webpack_require__(141); module.makeHot = module.hot.data ? module.hot.data.makeHot : ReactHotAPI(function () { return RootInstanceProvider.getRootInstances(ReactMount); }, React); })(); } try { (function () {
+
+	var React = __webpack_require__(141);
+
+	var PersonRow = React.createClass({
+		displayName: "PersonRow",
+
+		handleClick: function () {
+			this.props.selectionCallback(this.props.index);
+		},
+
+		handleChange: function (e) {
+			this.props.person[e.currentTarget.name] = e.currentTarget.value;
+			this.props.editCallback(this.props.person, this.props.index);
+		},
+
+		handleDeleteClick: function (e) {
+			this.props.deleteCallback(this.props.index);
+			e.stopPropagation();
+		},
+
+		handleAddClick: function (e) {
+			this.props.addCallback(this.props.index);
+			e.stopPropagation();
+		},
+
+		render: function () {
+			if (this.props.editMode) {
+				return React.createElement(
+					"tr",
+					null,
+					React.createElement(
+						"td",
+						null,
+						React.createElement("input", { type: "text", onChange: this.handleChange, name: "first_name", style: { width: '100%' }, value: this.props.person.first_name })
+					),
+					React.createElement(
+						"td",
+						null,
+						React.createElement("input", { type: "text", onChange: this.handleChange, name: "last_name", style: { width: '100%' }, value: this.props.person.last_name })
+					),
+					React.createElement(
+						"td",
+						null,
+						React.createElement("input", { type: "text", onChange: this.handleChange, name: "title", style: { width: '100%' }, value: this.props.person.title })
+					),
+					React.createElement(
+						"td",
+						null,
+						React.createElement("input", { type: "text", onChange: this.handleChange, name: "salary", style: { width: '100%' }, value: this.props.person.salary })
+					),
+					React.createElement(
+						"td",
+						null,
+						React.createElement("input", { type: "text", onChange: this.handleChange, name: "group_name", style: { width: '100%' }, value: this.props.person.group_name })
+					),
+					React.createElement(
+						"td",
+						null,
+						React.createElement("input", { type: "text", onChange: this.handleChange, name: "year", style: { width: '100%' }, value: this.props.person.year })
+					),
+					React.createElement(
+						"td",
+						null,
+						React.createElement(
+							"div",
+							{ className: "btn-group", role: "group" },
+							React.createElement(
+								"button",
+								{ onClick: this.handleDeleteClick, type: "button", className: "btn btn-default" },
+								React.createElement("span", { className: "glyphicon glyphicon-minus", "aria-hidden": "true" })
+							),
+							React.createElement(
+								"button",
+								{ onClick: this.handleAddClick, type: "button", className: "btn btn-default" },
+								React.createElement("span", { className: "glyphicon glyphicon-plus", "aria-hidden": "true" })
+							)
+						)
+					)
+				);
+			} else {
+				var salaryString = this.props.person.salary;
+				var salaryInt = parseInt(this.props.person.salary);
+				if (!isNaN(salaryInt)) {
+					salaryString = '$' + salaryInt.toFixed(2).replace(/(\d)(?=(\d{3})+\.)/g, '$1,');
+				}
+
+				return React.createElement(
+					"tr",
+					{ onClick: this.handleClick },
+					React.createElement(
+						"td",
+						null,
+						this.props.person.first_name
+					),
+					React.createElement(
+						"td",
+						null,
+						this.props.person.last_name
+					),
+					React.createElement(
+						"td",
+						null,
+						this.props.person.title
+					),
+					React.createElement(
+						"td",
+						null,
+						salaryString
+					),
+					React.createElement(
+						"td",
+						null,
+						this.props.person.group_name
+					),
+					React.createElement(
+						"td",
+						null,
+						this.props.person.year
+					),
+					React.createElement(
+						"td",
+						null,
+						React.createElement(
+							"div",
+							{ className: "btn-group", role: "group" },
+							React.createElement(
+								"button",
+								{ onClick: this.handleDeleteClick, type: "button", className: "btn btn-default" },
+								React.createElement("span", { className: "glyphicon glyphicon-minus", "aria-hidden": "true" })
+							),
+							React.createElement(
+								"button",
+								{ onClick: this.handleAddClick, type: "button", className: "btn btn-default" },
+								React.createElement("span", { className: "glyphicon glyphicon-plus", "aria-hidden": "true" })
+							)
+						)
+					)
+				);
+			}
+		}
+	});
+
+	var PeopleView = React.createClass({
+		displayName: "PeopleView",
+
+		getInitialState: function () {
+			var people = this.props.people;
+			if (people.length == 0) {
+				people = [this.getEmptyPerson()];
+			}
+
+			return {
+				people: people,
+				editingIndex: -1
+			};
+		},
+
+		getEmptyPerson: function () {
+			return {
+				first_name: '',
+				last_name: '',
+				title: '',
+				salary: '',
+				group_name: '',
+				year: ''
+			};
+		},
+
+		handleSelection: function (index) {
+			this.setState({ editingIndex: index });
+		},
+
+		handleEdit: function (person, index) {
+			this.setState(function (previousState) {
+				previousState.people[index] = person;
+				return { people: previousState.people };
+			});
+		},
+
+		handleDelete: function (index) {
+			this.setState(function (previousState) {
+				previousState.people.splice(index, 1);
+				return {
+					people: previousState.people,
+					editingIndex: -1
+				};
+			});
+		},
+
+		handleAdd: function (index) {
+			this.setState(function (previousState) {
+				previousState.people.splice(index + 1, 0, this.getEmptyPerson());
+				return {
+					people: previousState.people,
+					editingIndex: index + 1
+				};
+			});
+		},
+
+		addRow: function (e) {
+			this.handleAdd(-1);
+			e.stopPropagation();
+		},
+
+		render: function () {
+			var people = [];
+			this.state.people.forEach(function (person, index) {
+				people.push(React.createElement(PersonRow, {
+					person: person,
+					editMode: index == this.state.editingIndex,
+					selectionCallback: this.handleSelection,
+					editCallback: this.handleEdit,
+					deleteCallback: this.handleDelete,
+					addCallback: this.handleAdd,
+					key: index,
+					index: index }));
+			}, this);
+
+			return React.createElement(
+				"div",
+				null,
+				React.createElement(
+					"h2",
+					null,
+					"Preview of Extracted Data"
+				),
+				React.createElement(
+					"table",
+					{ className: "table table-bordered" },
+					React.createElement(
+						"thead",
+						null,
+						React.createElement(
+							"tr",
+							null,
+							React.createElement(
+								"th",
+								null,
+								"First Name"
+							),
+							React.createElement(
+								"th",
+								null,
+								"Last Name"
+							),
+							React.createElement(
+								"th",
+								null,
+								"Title"
+							),
+							React.createElement(
+								"th",
+								null,
+								"Compensation"
+							),
+							React.createElement(
+								"th",
+								null,
+								"Company"
+							),
+							React.createElement(
+								"th",
+								null,
+								"Year"
+							),
+							React.createElement(
+								"th",
+								null,
+								React.createElement(
+									"button",
+									{ onClick: this.addRow, type: "button", className: "btn btn-default" },
+									React.createElement("span", { className: "glyphicon glyphicon-plus", "aria-hidden": "true" })
+								)
+							)
+						)
+					),
+					React.createElement(
+						"tbody",
+						null,
+						people
+					)
+				)
+			);
+		}
+	});
+
+	module.exports = PeopleView;
+
+	/* REACT HOT LOADER */ }).call(this); } finally { if (true) { (function () { var foundReactClasses = module.hot.data && module.hot.data.foundReactClasses || false; if (module.exports && module.makeHot) { var makeExportsHot = __webpack_require__(250); if (makeExportsHot(module, __webpack_require__(141))) { foundReactClasses = true; } var shouldAcceptModule = true && foundReactClasses; if (shouldAcceptModule) { module.hot.accept(function (err) { if (err) { console.error("Cannot not apply hot update to " + "people-view.jsx" + ": " + err.message); } }); } } module.hot.dispose(function (data) { data.makeHot = module.makeHot; data.foundReactClasses = foundReactClasses; }); })(); } }
+	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(6)(module)))
 
 /***/ }
 /******/ ]);

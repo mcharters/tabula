@@ -101,7 +101,7 @@
             <span class="glyphicon glyphicon-eye-open"></span>
             Preview
           </button>
-          <button type="submit" <%=disableIfNoData%> id="download-data" class="btn btn-default" data-action='/pdf/<%=pdf_id%>/save_tsv'>
+          <button type="submit" disabled='disabled' id="download-data" class="btn btn-default" data-action='/pdf/<%=pdf_id%>/save_people'>
             <span class="glyphicon glyphicon-refresh"></span>
             <span class="glyphicon glyphicon-floppy-save"></span>
             Save
@@ -160,10 +160,9 @@
             <div id="control-panel">
             </div>
 
-           <h2>Preview of Tabular Data</h2>
             <div id="table-container">
             </div>
-          <h2>Preview of Extracted Data</h2>
+          
           <div id="people-container">
           </div>
         </div>

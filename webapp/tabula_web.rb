@@ -10,6 +10,7 @@ require 'fileutils'
 require 'securerandom'
 require 'shield'
 require 'basica'
+require 'date'
 
 require_relative '../lib/jars/tabula-0.8.0-jar-with-dependencies.jar'
 
@@ -236,11 +237,30 @@ Cuba.define do
         end
 
         if terms_found
-          documents << File.read(File.join(TabulaSettings::SEDAR_DOCUMENTS_BASEPATH, file))
+          documents << JSON.load(File.read(File.join(TabulaSettings::SEDAR_DOCUMENTS_BASEPATH, file)))
         end
       end
 
-      res.write('{"documents":[' + documents.join(',') + ']}')
+      results = {}
+      documents.each do |document|
+        next if document['title'].downcase.include? 'french'
+
+        company = document['company']['name']
+
+        if results.has_key?(company)
+          currDate = Date.parse(results[company]['date'])
+          docDate = Date.parse(document['date'])
+
+          if docDate > currDate
+            results[company] = document
+          end
+
+        else
+          results[company] = document
+        end
+      end
+
+      res.write(JSON.dump({:documents => results.values}))
     end
 
     on 'import.json' do
@@ -311,10 +331,9 @@ Cuba.define do
 
     on "pdf/:file_id/preview_extracted" do |file_id|
       table = JSON.load(req.params['table'])
-
       basename = File.basename(req.params['new_filename'], File.extname(req.params['new_filename']))
       table_type = req.params['table_type']
-      method = req.params['extraction_method']
+      method = JSON.load(req.params['coords'])[0]['extraction_method']
 
       tsv_path = File.join(TabulaSettings::DOCUMENTS_BASEPATH, file_id, "#{basename}-#{table_type}.#{method}.tsv")
       CSV.open(tsv_path, 'wb', {:col_sep => "\t"}) do |csv|
@@ -323,9 +342,31 @@ Cuba.define do
         end
       end
 
-      people = `python #{TabulaSettings::SCRIPTS_BASEPATH}/people_from_tsv.py #{tsv_path}`
+      people = `python #{TabulaSettings::SCRIPTS_BASEPATH}/people_from_tsv.py "#{tsv_path}"`
+
+      puts "people are " + people
 
       res.write(people)
+    end
+
+    on "pdf/:file_id/save_people" do |file_id|
+      people = JSON.load(req.params['people'])
+      basename = File.basename(req.params['new_filename'], File.extname(req.params['new_filename']))
+      table_type = req.params['table_type']
+      method = JSON.load(req.params['coords'])[0]['extraction_method']
+
+      csv_path = File.join(TabulaSettings::DOCUMENTS_BASEPATH, file_id, "#{basename}-#{table_type}.#{method}.csv")
+      CSV.open(csv_path, 'wb') do |csv|
+        csv << ['first_name','last_name','title','salary','group_name','year']
+
+        people.each do |person|
+          csv << [person['first_name'], person['last_name'], person['title'], person['salary'], person['group_name'], person['year']]
+        end
+      end
+
+      results = `python #{TabulaSettings::SCRIPTS_BASEPATH}/save_people_to_db.py "#{csv_path}"`
+
+      res.write(JSON.dump({:message => results}))
     end
 
     on "pdf/:file_id/save_tsv" do |file_id|

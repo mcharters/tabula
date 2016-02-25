@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "start": "node dev-js-server.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "lint": "eslint . --ext .js --ext .jsx"
   },
   "repository": {
     "type": "git",
@@ -23,6 +24,8 @@
     "babel-preset-react": "^6.5.0",
     "backbone": "^1.2.3",
     "bootstrap": "^3.3.6",
+    "eslint": "^2.2.0",
+    "eslint-plugin-react": "^4.1.0",
     "file-loader": "^0.8.5",
     "imports-loader": "^0.6.5",
     "jquery": "^2.2.0",
