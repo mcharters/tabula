@@ -336,15 +336,13 @@ Cuba.define do
       method = JSON.load(req.params['coords'])[0]['extraction_method']
 
       tsv_path = File.join(TabulaSettings::DOCUMENTS_BASEPATH, file_id, "#{basename}-#{table_type}.#{method}.tsv")
-      CSV.open(tsv_path, 'wb', {:col_sep => "\t"}) do |csv|
+      CSV.open(tsv_path, 'wb', {:col_sep => "\t", :encoding => "UTF-8"}) do |csv|
         table.each do |row|
           csv << row
         end
       end
 
       people = `python #{TabulaSettings::SCRIPTS_BASEPATH}/people_from_tsv.py "#{tsv_path}"`
-
-      puts "people are " + people
 
       res.write(people)
     end
@@ -356,7 +354,7 @@ Cuba.define do
       method = JSON.load(req.params['coords'])[0]['extraction_method']
 
       csv_path = File.join(TabulaSettings::DOCUMENTS_BASEPATH, file_id, "#{basename}-#{table_type}.#{method}.csv")
-      CSV.open(csv_path, 'wb') do |csv|
+      CSV.open(csv_path, 'wb', {:encoding => "UTF-8"}) do |csv|
         csv << ['first_name','last_name','title','salary','group_name','year']
 
         people.each do |person|
