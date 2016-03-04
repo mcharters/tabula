@@ -8,8 +8,12 @@ class DetectTablesJob < Tabula::Background::Job
     filepath = options[:filepath]
     output_dir = options[:output_dir]
 
+    result = {:page_areas_by_page => [], :finished => false}
 
-    page_areas_by_page = []
+    # make sure there's something to read here, even if it's just empty
+    File.open(output_dir + "/tables.json", 'w') do |f|
+      f.puts result.to_json
+    end
 
     begin
       extractor = Tabula::Extraction::ObjectExtractor.new(filepath, :all)
@@ -22,7 +26,7 @@ class DetectTablesJob < Tabula::Background::Job
         changed
 
         areas = nda.detect(page)
-        page_areas_by_page << areas.map { |rect|
+        result[:page_areas_by_page] << areas.map { |rect|
           [ rect.getLeft,
             rect.getTop,
             rect.getWidth,
@@ -34,8 +38,10 @@ class DetectTablesJob < Tabula::Background::Job
       warn("Table auto-detect failed. You may need to select tables manually.")
     end
 
+    result[:finished] = true
+
     File.open(output_dir + "/tables.json", 'w') do |f|
-      f.puts page_areas_by_page.to_json
+      f.puts result.to_json
     end
 
     at(100, 100, "complete")

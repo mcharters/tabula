@@ -2,6 +2,11 @@ var webpack = require('webpack');
 var WebpackDevServer = require('webpack-dev-server');
 var config = require('./webpack.config.js');
 
+config.entry.unshift('webpack/hot/only-dev-server');
+config.entry.unshift('webpack-dev-server/client?http://0.0.0.0:3000');
+
+config.module.loaders[0].loaders.unshift('react-hot');
+
 new WebpackDevServer(webpack(config), {
 	publicPath: config.output.publicPath,
 	hot: true,

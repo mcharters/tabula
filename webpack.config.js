@@ -2,8 +2,6 @@ var webpack = require('webpack');
 
 module.exports = {
 	entry: [
-		'webpack-dev-server/client?http://0.0.0.0:3000',
-		'webpack/hot/only-dev-server',
 		'./lib/js/main.jsx'
 	],
 	output: {
@@ -16,7 +14,7 @@ module.exports = {
 			{
 				test: /\.jsx?$/,
 				exclude: /(node_modules)/,
-				loaders: ['react-hot', 'babel?presets[]=react']
+				loaders: ['babel?presets[]=react']
 			},
 			{
 				test: /\.js?$/,
