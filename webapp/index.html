@@ -49,7 +49,7 @@
 
 
 
-    <div id="tabula-app"> <!-- TODO remember to change this ID to match what page we're on.  id="page-selections", id="page-export"-->   
+    <div id="tabula-app"> <!-- TODO remember to change this ID to match what page we're on.  id="page-selections", id="page-export"-->
     </div>
     <div id="tabula-dataview">
 
@@ -59,7 +59,7 @@
       <script type="text/template" id="page-template" >
         <span class="page-number"><%= number %>. </span>
         <div class="page" id="page-div-<%= number %>">
-          <img onload="$(this).data('loaded', 'loaded');" src="<%= image_url %>" draggable="false" unselectable="on" > <!-- unselectable is for IE/Opera --> 
+          <img onload="$(this).data('loaded', 'loaded');" src="<%= image_url %>" draggable="false" unselectable="on" > <!-- unselectable is for IE/Opera -->
         </div>
       </script>
       <script type="text/template" id="thumbnail-template" >
@@ -162,7 +162,7 @@
 
             <div id="table-container">
             </div>
-          
+
           <div id="people-container">
           </div>
         </div>
@@ -175,7 +175,7 @@
         <div id="main-pane">
           <div id="control-panel">
           </div>
- 
+
           <div id="pages-container">
           </div>
         </div>
@@ -186,7 +186,7 @@
         <h4>Failed Uploads</h4>
         <ol id="failed-uploads">
 
-        </ol>        
+        </ol>
       </script>
       <script type="text/template" id="failed-uploaded-file-template">
         <a href='/pdf/<%= id %>'><%= original_filename %></a>: <%= failure_message %>
@@ -391,7 +391,7 @@
 
     </script> <!-- TODO: move this to tabula.js, only run it if we're in upload page viewer -->
 
-    <script type="text/javascript" src="http://localhost:3000/bundle.js?_cachebuster=201510300905"></script> <!-- actually starts Tabula -->
+    <script type="text/javascript" src="/js/bundle.js?_cachebuster=201510300905"></script> <!-- actually starts Tabula -->
 
   </body>
 </html>
