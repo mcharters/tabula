@@ -76,7 +76,12 @@ module TabulaSettings
 
 
   ########## Constants that are used around the app, based on settings ##########
-  CHARITYCAN_DIR = "C:\\Users\\Matt\\Source\\GitHub\\charitycan"
+  if ENV['RACK_ENV'] == 'development'
+    CHARITYCAN_DIR = "C:\\Users\\Matt\\Source\\GitHub\\charitycan"
+  else
+    CHARITYCAN_DIR = "D:\\WebSites\\charitycanapi"
+  end
+
   SEDAR_DATA_DIR = File.join(CHARITYCAN_DIR, "data", "sedar")
   SCRIPTS_BASEPATH = File.join(CHARITYCAN_DIR, "scripts")
   DOCUMENTS_BASEPATH = File.join(self.getDataDir, 'pdfs')
@@ -88,6 +93,7 @@ module TabulaSettings
   puts "DATA_DIR = #{self.getDataDir}"
   puts "DOCUMENTS_BASEPATH = #{DOCUMENTS_BASEPATH}"
   puts "ENABLE_DEBUG_METHODS = #{ENABLE_DEBUG_METHODS}"
+  puts "RACK_ENV = #{ENV['RACK_ENV']}"
 
   ########## Initialize environment, using helpers ##########
   FileUtils.mkdir_p(DOCUMENTS_BASEPATH)
