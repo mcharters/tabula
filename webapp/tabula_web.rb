@@ -13,6 +13,7 @@ require 'basica'
 require 'date'
 
 require_relative '../lib/jars/tabula-0.9.0-jar-with-dependencies.jar'
+require_relative '../lib/jars/mysql-connector-java-5.1.39-bin.jar'
 
 require_relative '../lib/tabula_java_wrapper.rb'
 java_import 'java.io.ByteArrayOutputStream'
@@ -20,6 +21,7 @@ java_import 'java.util.zip.ZipEntry'
 java_import 'java.util.zip.ZipOutputStream'
 
 require_relative './tabula_settings.rb'
+require_relative './tabula_passwords.rb'
 
 unless File.directory?(TabulaSettings::DOCUMENTS_BASEPATH)
   raise "DOCUMENTS_BASEPATH does not exist or is not a directory."
@@ -225,42 +227,37 @@ Cuba.define do
       documents = []
       search_terms = req.params['terms'].split()
 
-      Dir.foreach(TabulaSettings::SEDAR_DOCUMENTS_BASEPATH) do |file|
-        next if file == "." or file == ".."
+      Java::com.mysql.jdbc.Driver
+      userurl = "jdbc:mysql://127.0.0.1/charitystream"
+      connSelect = java.sql.DriverManager.get_connection(userurl, DB_USER, DB_PASS)
+      stmtSelect = connSelect.create_statement
 
-        terms_found = true
-        search_terms.each do |term|
-          if not file.downcase.include? term.downcase
-            terms_found = false
-            break
-          end
-        end
+      search_terms = search_terms.map { |term| "+#{term}*" }.join(' ')
 
-        if terms_found
-          documents << JSON.load(File.read(File.join(TabulaSettings::SEDAR_DOCUMENTS_BASEPATH, file)))
-        end
+      selectQuery = %Q{SELECT d.id, d.local_path, d.interesting_pages, d.title, d.created, g.name
+        FROM documents d
+        LEFT JOIN groups g ON d.group_id = g.id
+        WHERE MATCH (g.name) AGAINST ("#{search_terms}" IN BOOLEAN MODE)
+        AND d.title NOT LIKE '%french%'
+        ORDER BY g.id, d.created DESC}
+
+      puts selectQuery
+
+      resultSet = stmtSelect.execute_query(selectQuery)
+
+      results = Array.new
+      while (resultSet.next) do
+        results.unshift({
+          :id => resultSet.getObject("id"),
+          :source => resultSet.getObject("local_path"),
+          :title => resultSet.getObject("title"),
+          :interesting_pages => JSON.load(resultSet.getObject("interesting_pages")),
+          :date => resultSet.getObject("created"),
+          :company => resultSet.getObject("name")
+        })
       end
 
-      results = {}
-      documents.each do |document|
-        next if document['title'].downcase.include? 'french'
-
-        company = document['company']['name']
-
-        if results.has_key?(company)
-          currDate = Date.parse(results[company]['date'])
-          docDate = Date.parse(document['date'])
-
-          if docDate > currDate
-            results[company] = document
-          end
-
-        else
-          results[company] = document
-        end
-      end
-
-      res.write(JSON.dump({:documents => results.values}))
+      res.write(JSON.dump({:documents => results}))
     end
 
     on 'import.json' do
