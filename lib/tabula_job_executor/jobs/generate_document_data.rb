@@ -14,6 +14,7 @@ class GenerateDocumentDataJob < Tabula::Background::Job
     id = options[:id]
     output_dir = options[:output_dir]
     interesting_pages = options[:interesting_pages]
+    document_id = options[:document_id]
 
 
     # return some status to browser
@@ -32,7 +33,8 @@ class GenerateDocumentDataJob < Tabula::Background::Job
                           'time' => Time.now.to_i,
                           'page_count' => '?',
                           'size' => File.size(filepath),
-                          'thumbnail_sizes' => options[:thumbnail_sizes]
+                          'thumbnail_sizes' => options[:thumbnail_sizes],
+                          'document_id' => document_id
                         })
 
     at(5, 100, "analyzing PDF text...")
