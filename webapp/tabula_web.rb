@@ -332,6 +332,7 @@ Cuba.define do
       basename = File.basename(req.params['new_filename'], File.extname(req.params['new_filename']))
       table_type = req.params['table_type']
       method = JSON.load(req.params['coords'])[0]['extraction_method']
+      document_id = req.params['document_id']
 
       tsv_path = File.join(TabulaSettings::DOCUMENTS_BASEPATH, file_id, "#{basename}-#{table_type}.#{method}.tsv")
       CSV.open(tsv_path, 'wb', {:col_sep => "\t", :encoding => "UTF-8"}) do |csv|
@@ -340,7 +341,7 @@ Cuba.define do
         end
       end
 
-      people = `python #{TabulaSettings::SCRIPTS_BASEPATH}/people_from_tsv.py "#{tsv_path}"`
+      people = `python #{TabulaSettings::SCRIPTS_BASEPATH}/people_from_tsv.py "#{tsv_path}" #{document_id}`
 
       res.write(people)
     end
@@ -350,13 +351,14 @@ Cuba.define do
       basename = File.basename(req.params['new_filename'], File.extname(req.params['new_filename']))
       table_type = req.params['table_type']
       method = JSON.load(req.params['coords'])[0]['extraction_method']
+      document_id = req.params['document_id']
 
       csv_path = File.join(TabulaSettings::DOCUMENTS_BASEPATH, file_id, "#{basename}-#{table_type}.#{method}.csv")
       CSV.open(csv_path, 'wb', {:encoding => "UTF-8"}) do |csv|
-        csv << ['first_name','last_name','title','salary','group_name','year']
+        csv << ['first_name','last_name','title','salary','group_name','year','document_id']
 
         people.each do |person|
-          csv << [person['first_name'], person['last_name'], person['title'], person['salary'], person['group_name'], person['year']]
+          csv << [person['first_name'], person['last_name'], person['title'], person['salary'], person['group_name'], person['year'], document_id]
         end
       end
 
