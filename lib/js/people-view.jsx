@@ -25,6 +25,7 @@ var PersonRow = React.createClass({
 			return (
 				<tr>
 					<td><input type="text" onChange={this.handleChange} name="first_name" style={{width: '100%'}} value={this.props.person.first_name} /></td>
+					<td><input type="text" onChange={this.handleChange} name="middle_name" style={{ width: '100%'}} value={this.props.person.middle_name} /></td>
 					<td><input type="text" onChange={this.handleChange} name="last_name" style={{width: '100%'}} value={this.props.person.last_name} /></td>
 					<td><input type="text" onChange={this.handleChange} name="title" style={{width: '100%'}} value={this.props.person.title} /></td>
 					<td><input type="text" onChange={this.handleChange} name="salary" style={{width: '100%'}} value={this.props.person.salary} /></td>
@@ -48,6 +49,7 @@ var PersonRow = React.createClass({
 			return (
 				<tr onClick={this.handleClick}>
 					<td>{this.props.person.first_name}</td>
+					<td>{this.props.person.middle_name}</td>
 					<td>{this.props.person.last_name}</td>
 					<td>{this.props.person.title}</td>
 					<td>{salaryString}</td>
@@ -81,6 +83,7 @@ var PeopleView = React.createClass({
 	getEmptyPerson: function() {
 		return {
 			first_name: '',
+			middle_name: '',
 			last_name: '',
 			title: '',
 			salary: '',
@@ -129,14 +132,14 @@ var PeopleView = React.createClass({
 		var people = [];
 		this.state.people.forEach(function(person, index) {
 			people.push(
-				<PersonRow 
-				person={person} 
-				editMode={index == this.state.editingIndex} 
+				<PersonRow
+				person={person}
+				editMode={index == this.state.editingIndex}
 				selectionCallback={this.handleSelection}
 				editCallback={this.handleEdit}
 				deleteCallback={this.handleDelete}
 				addCallback={this.handleAdd}
-				key={index} 
+				key={index}
 				index={index} />
 			);
 		}, this);
@@ -148,6 +151,7 @@ var PeopleView = React.createClass({
 					<thead>
 						<tr>
 							<th>First Name</th>
+							<th>Middle Name</th>
 							<th>Last Name</th>
 							<th>Title</th>
 							<th>Compensation</th>

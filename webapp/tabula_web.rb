@@ -355,10 +355,10 @@ Cuba.define do
 
       csv_path = File.join(TabulaSettings::DOCUMENTS_BASEPATH, file_id, "#{basename}-#{table_type}.#{method}.csv")
       CSV.open(csv_path, 'wb', {:encoding => "UTF-8"}) do |csv|
-        csv << ['first_name','last_name','title','salary','group_name','year','document_id']
+        csv << ['first_name','middle_name','last_name','person_id','title','salary','group_name','group_id','year','document_id']
 
         people.each do |person|
-          csv << [person['first_name'], person['last_name'], person['title'], person['salary'], person['group_name'], person['year'], document_id]
+          csv << [person['first_name'], person['middle_name'], person['last_name'], person['person_id'], person['title'], person['salary'], person['group_name'], person['group_id'], person['year'], document_id]
         end
       end
 

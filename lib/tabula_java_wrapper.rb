@@ -66,7 +66,7 @@ module Tabula
 
     def Extraction.openPDF(pdf_filename, password='')
       raise Errno::ENOENT unless File.exists?(pdf_filename)
-      document = PDDocument.load(pdf_filename)
+      document = PDDocument.load(java.io.File.new(pdf_filename))
       #document = PDDocument.loadNonSeq(java.io.File.new(pdf_filename), nil, password)
       document
     end
@@ -80,9 +80,13 @@ module Tabula
       def initialize(pdf_filename, pages=[1], password='', options={})
         raise Errno::ENOENT unless File.exists?(pdf_filename)
         @pdf_filename = pdf_filename
-        document = Extraction.openPDF(pdf_filename, password)
+        @document = Extraction.openPDF(pdf_filename, password)
 
-        super(document)
+        super(@document)
+      end
+
+      def page_count
+        @document.get_number_of_pages
       end
     end
 
