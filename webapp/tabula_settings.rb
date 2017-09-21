@@ -77,7 +77,7 @@ module TabulaSettings
 
   ########## Constants that are used around the app, based on settings ##########
   if ENV['RACK_ENV'] == 'development'
-    CHARITYCAN_DIR = "C:\\Users\\Matt\\Source\\GitHub\\charitycan"
+    CHARITYCAN_DIR = "C:\\Users\\matth\\Source\\GitHub\\charitycan"
   else
     CHARITYCAN_DIR = "D:\\WebSites\\charitycanapi"
   end

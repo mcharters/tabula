@@ -12,8 +12,8 @@ require 'shield'
 require 'basica'
 require 'date'
 
-require_relative '../lib/jars/tabula-0.9.0-jar-with-dependencies.jar'
-require_relative '../lib/jars/mysql-connector-java-5.1.39-bin.jar'
+require_relative '../lib/jars/tabula-1.0.2-SNAPSHOT-jar-with-dependencies.jar'
+require_relative '../lib/jars/mssql-jdbc-6.2.1.jre8.jar'
 
 require_relative '../lib/tabula_java_wrapper.rb'
 java_import 'java.io.ByteArrayOutputStream'
@@ -228,31 +228,31 @@ Cuba.define do
       documents = []
       search_terms = req.params['terms'].split()
 
-      Java::com.mysql.jdbc.Driver
-      userurl = "jdbc:mysql://127.0.0.1/charitystream"
+      Java::com.microsoft.sqlserver.jdbc.SQLServerDriver
+      userurl = "jdbc:sqlserver://#{DB_HOST};databaseName=#{DB_NAME}"
       connSelect = java.sql.DriverManager.get_connection(userurl, DB_USER, DB_PASS)
       stmtSelect = connSelect.create_statement
 
-      search_terms = search_terms.map { |term| "+#{term}*" }.join(' ')
+      search_terms = search_terms.map { |term| "\"#{term}*\"" }.join(' AND ')
 
-      selectQuery = %Q{SELECT d.id, d.local_path, d.interesting_pages, d.title, d.created, g.name
-        FROM documents d
-        LEFT JOIN groups g ON d.group_id = g.id
-        WHERE MATCH (g.name) AGAINST ("#{search_terms}" IN BOOLEAN MODE)
-        AND d.title NOT LIKE '%french%'
-        ORDER BY g.id, d.created DESC}
+      selectQuery = %Q{SELECT d.Id, d.LocalPath, d.InterestingPages, d.Title, d.Created, g.Name
+        FROM tblSourceDocuments d
+        LEFT JOIN tblGeneralOrganizations g ON d.OrganizationId = g.Id
+        WHERE CONTAINS(g.Name, '#{search_terms}')
+        AND d.Title NOT LIKE '%french%'
+        ORDER BY g.Id, d.Created DESC}
 
       resultSet = stmtSelect.execute_query(selectQuery)
 
       results = Array.new
       while (resultSet.next) do
         results.unshift({
-          :id => resultSet.getObject("id"),
-          :source => resultSet.getObject("local_path"),
-          :title => resultSet.getObject("title"),
-          :interesting_pages => JSON.load(resultSet.getObject("interesting_pages")),
-          :date => resultSet.getObject("created"),
-          :company => resultSet.getObject("name")
+          :id => resultSet.getObject("Id"),
+          :source => resultSet.getObject("LocalPath"),
+          :title => resultSet.getObject("Title"),
+          :interesting_pages => JSON.load(resultSet.getObject("InterestingPages")),
+          :date => resultSet.getObject("Created"),
+          :company => resultSet.getObject("Name")
         })
       end
 
